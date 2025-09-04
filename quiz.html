@@ -632,7 +632,9 @@ function nextQuestion() {
   }
 
   // Save progress
-  localStorage.setItem("currentIndex", currentIndex);
+    // Save progress
+  localStorage.setItem("quizCurrentIndex", currentIndex);
+
 
   // Load the next question
   function1(questions[currentIndex], currentIndex);
