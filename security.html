@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Locked — Enter Password</title>
+  <style>
+    /* Fullscreen black background */
+    html,body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #fff;
+    }
+
+    /* Centering container */
+    .center {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Card */
+    .card {
+      width: min(420px, 92vw);
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 20px;
+      letter-spacing: 0.6px;
+      font-weight: 600;
+    }
+
+    p.hint {
+      margin: 0 0 22px;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+    }
+
+    form {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    input[type="password"]:focus,
+    input[type="text"]:focus {
+      border-color: rgba(255,255,255,0.22);
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.02) inset;
+    }
+
+    .controls {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      background: #0b84ff;
+      color: white;
+      min-width: 120px;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    .error {
+      color: #ff6868;
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+
+    .small {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .toggle {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.85);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    @media (max-width:400px){
+      .card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div class="card" role="dialog" aria-labelledby="lock-title" aria-describedby="lock-desc">
+      <h1 id="lock-title">Enter password to continue</h1>
+      <p id="lock-desc" class="hint">This page is protected. Type the password and press Enter or the button below.</p>
+
+      <form id="lockForm" autocomplete="off" onsubmit="return false;">
+        <input id="pw" name="password" type="password" inputmode="text" autocomplete="new-password" placeholder="Password" aria-label="Password" required />
+        <div class="controls">
+          <button id="submitBtn" type="button">Unlock</button>
+          <button id="showBtn" class="toggle" type="button" aria-pressed="false">Show</button>
+        </div>
+        <div class="error" id="err"></div>
+        <div class="small" style="margin-top:10px">Locked screen — background intentionally black.</div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    /************************************************************************
+     * CONFIGURATION
+     * Edit these values to set the correct password and redirect URL.
+     *
+     * NOTE: This is client-side protection only. Anyone can view source and
+     * find the password. For real security use a server-side authentication.
+     ************************************************************************/
+    const CORRECT_PASSWORD = "URKGRAH"; // <-- change this
+    const REDIRECT_URL = "letter.html";    // <-- change this
+
+    // (Optional) Basic hardening: store base64 of password instead of plain text
+    // Uncomment and replace below if you prefer:
+    // const CORRECT_PASSWORD = atob("eW91cl9wYXNzd29yZF9oZXJl"); // base64 of "your_password_here"
+
+    // End config
+    const pwInput = document.getElementById('pw');
+    const submitBtn = document.getElementById('submitBtn');
+    const showBtn = document.getElementById('showBtn');
+    const errDiv = document.getElementById('err');
+
+    let attempts = 0;
+    const MAX_ATTEMPTS = 10;
+
+    function showError(msg) {
+      errDiv.textContent = msg;
+    }
+
+    function clearError() {
+      errDiv.textContent = "";
+    }
+
+    function checkPassword() {
+      clearError();
+      if (attempts >= MAX_ATTEMPTS) {
+        showError("Too many attempts. Reload the page to try again.");
+        return;
+      }
+
+      const val = pwInput.value;
+      if (!val) {
+        showError("Please enter the password.");
+        return;
+      }
+
+      // simple comparison (case-sensitive)
+      if (val === CORRECT_PASSWORD) {
+        // redirect to the specified page
+        // use replace() so the locked page is not in history (optional)
+        window.location.replace(REDIRECT_URL);
+      } else {
+        attempts++;
+        if (attempts >= MAX_ATTEMPTS) {
+          showError("Incorrect password. Too many attempts.");
+          pwInput.disabled = true;
+          submitBtn.disabled = true;
+          showBtn.disabled = true;
+        } else {
+          showError("Incorrect password. Attempts left: " + (MAX_ATTEMPTS - attempts));
+          pwInput.value = "";
+          pwInput.focus();
+        }
+      }
+    }
+
+    // Submit on button or Enter
+    submitBtn.addEventListener('click', checkPassword);
+    pwInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') checkPassword();
+    });
+
+    // Toggle show/hide password
+    showBtn.addEventListener('click', function () {
+      const isShown = pwInput.type === 'text';
+      if (isShown) {
+        pwInput.type = 'password';
+        showBtn.textContent = 'Show';
+        showBtn.setAttribute('aria-pressed','false');
+      } else {
+        pwInput.type = 'text';
+        showBtn.textContent = 'Hide';
+        showBtn.setAttribute('aria-pressed','true');
+      }
+      pwInput.focus();
+    });
+
+    // Focus the input on load
+    window.addEventListener('load', () => pwInput.focus());
+  </script>
+</body>
+</html>
